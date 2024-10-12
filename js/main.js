@@ -1,66 +1,67 @@
-// Declaración de variables
-const products = [
-    { id: 1, name: "Producto 1", price: 10 },
-    { id: 2, name: "Producto 2", price: 20 },
-    { id: 3, name: "Producto 3", price: 30 },
-];
-
+// Declaración de variables y carrito vacío
 let cart = JSON.parse(localStorage.getItem('cart')) || [];
 
-// Función para renderizar productos
-function renderProducts() {
-    const productList = document.getElementById('product-list');
-    productList.innerHTML = '';
-    products.forEach(product => {
-        const productDiv = document.createElement('div');
-        productDiv.className = 'product';
-        productDiv.innerHTML = `
-            <h3>${product.name}</h3>
-            <p>Precio: $${product.price}</p>
-            <button onclick="addToCart(${product.id})">Agregar al carrito</button>
-        `;
-        productList.appendChild(productDiv);
-    });
+// Actualiza la cuenta del carrito en la página
+function updateCartCount() {
+    document.getElementById('cart-count').textContent = cart.length;
 }
 
-// Función para agregar productos al carrito
-function addToCart(productId) {
-    const product = products.find(p => p.id === productId);
-    const existingProduct = cart.find(item => item.id === productId);
+// Muestra los elementos del carrito en el modal
+function showCart() {
+    const cartItems = document.getElementById('cart-items');
+    cartItems.innerHTML = '';
     
-    if (existingProduct) {
-        existingProduct.quantity += 1;
+    if (cart.length === 0) {
+        cartItems.innerHTML = '<p>El carrito está vacío</p>';
     } else {
-        cart.push({ ...product, quantity: 1 });
+        cart.forEach(item => {
+            const div = document.createElement('div');
+            div.textContent = `${item.name} - $${item.price}`;
+            cartItems.appendChild(div);
+        });
     }
     
-    updateCart();
+    document.getElementById('cart-modal').classList.remove('hidden');
 }
 
-// Función para actualizar el carrito
-function updateCart() {
-    localStorage.setItem('cart', JSON.stringify(cart));
-    renderCart();
-}
-
-// Función para renderizar el carrito
-function renderCart() {
-    const cartItems = document.getElementById('cart-items');
-    const totalPrice = document.getElementById('total-price');
+// Añade un producto al carrito
+function addToCart(productId) {
+    const productElement = document.querySelector(`.product[data-id="${productId}"]`);
+    const name = productElement.querySelector('h3').textContent;
+    const price = parseInt(productElement.querySelector('p').textContent.replace('Precio: $', ''));
     
-    cartItems.innerHTML = '';
-    let total = 0;
-
-    cart.forEach(item => {
-        const li = document.createElement('li');
-        li.textContent = `${item.name} (x${item.quantity}) - $${item.price * item.quantity}`;
-        cartItems.appendChild(li);
-        total += item.price * item.quantity;
-    });
-
-    totalPrice.textContent = `Total: $${total}`;
+    const product = { id: productId, name, price };
+    
+    // Agrega el producto al array del carrito
+    cart.push(product);
+    updateCartCount();
+    localStorage.setItem('cart', JSON.stringify(cart));
 }
 
-// Inicializar la aplicación
-renderProducts();
-renderCart();
+// Vacía el carrito
+function clearCart() {
+    cart = [];
+    localStorage.removeItem('cart');
+    updateCartCount();
+    showCart();
+}
+
+// Cerrar el carrito
+function closeCart() {
+    document.getElementById('cart-modal').classList.add('hidden');
+}
+
+// Eventos de botones
+document.querySelectorAll('.add-to-cart').forEach(button => {
+    button.addEventListener('click', (e) => {
+        const productId = e.target.parentElement.getAttribute('data-id');
+        addToCart(productId);
+    });
+});
+
+document.getElementById('show-cart').addEventListener('click', showCart);
+document.getElementById('clear-cart').addEventListener('click', clearCart);
+document.getElementById('close-cart').addEventListener('click', closeCart);
+
+// Al cargar la página, actualizamos la cuenta del carrito
+updateCartCount();
